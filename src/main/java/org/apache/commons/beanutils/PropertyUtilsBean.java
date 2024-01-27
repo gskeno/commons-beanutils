@@ -541,7 +541,7 @@ public class PropertyUtilsBean {
 
         // Call the property getter and return the value
         final Object value = invokeMethod(readMethod, bean, EMPTY_OBJECT_ARRAY);
-        if (!value.getClass().isArray()) {
+        if (!value.getClass().isArray()) { // ?????????list??????
             if (!(value instanceof java.util.List)) {
                 throw new IllegalArgumentException("Property '" + name +
                         "' is not indexed on bean class '" + bean.getClass() + "'");

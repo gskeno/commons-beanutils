@@ -22,12 +22,24 @@ package org.apache.commons.beanutils;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class PropertyUtilsTest {
 
     @Test
+    public void testIntrospector() throws IntrospectionException {
+        BeanInfo beanInfo = Introspector.getBeanInfo(Person.class);
+        System.out.println(beanInfo);
+    }
+    @Test
     public void testGetSetSimpleProperty() throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+        // firstName = A, lastName = Z, ?????
         Person person = new Person("A","Z");
         Object firstName = PropertyUtils.getSimpleProperty(person, "firstName");
         Assert.assertTrue(firstName.equals("A"));
@@ -44,8 +56,49 @@ public class PropertyUtilsTest {
         paper.addSinger("2");
         paper.setTutors(new String[]{"A","B","C"});
         Object signer = PropertyUtils.getIndexedProperty(paper, "signers", 0);
-        System.out.println(signer);
+        Assert.assertEquals("1", signer);
         Object tutor = PropertyUtils.getIndexedProperty(paper, "tutors", 1);
-        System.out.println(tutor);
+        Assert.assertEquals("B", tutor);
+    }
+
+    @Test
+    public void testGetMapIndexProperty() throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+        Employee employee = new Employee();
+        Map<String,Object> address = new HashMap<>();
+        address.put("home","A");
+        address.put("company","B");
+        employee.setAddress(address);
+
+        // ??????,????get??
+        Object home1 = PropertyUtils.getMappedProperty(employee, "address(home)");
+        Object home2 = PropertyUtils.getMappedProperty(employee, "address", "home");
+        Assert.assertEquals(home1, home2);
+        Assert.assertEquals(home1,"A");
+
+        PropertyUtils.setMappedProperty(employee, "address(home)", "??");
+        Assert.assertEquals(PropertyUtils.getMappedProperty(employee, "address(home)"), "??");
+        PropertyUtils.setMappedProperty(employee, "address", "home", "??");
+        Assert.assertEquals(PropertyUtils.getMappedProperty(employee, "address(home)"), "??");
+    }
+
+    @Test
+    public void testDynaClass() throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
+        BasicDynaClass basicDynaClass = new BasicDynaClass("dyncClass", null, new DynaProperty[]{
+                new DynaProperty("booleanProperty", Boolean.TYPE),
+                new DynaProperty("listIndexed", List.class),
+                new DynaProperty("stringArray", new String[0].getClass()),
+                new DynaProperty("mappedIntProperty", Map.class),
+                new DynaProperty("stringProperty", String.class),
+        });
+        DynaBean dynaBean = basicDynaClass.newInstance();
+        Map<Integer,Object> map = new HashMap<>();
+        map.put(1,"A");
+        dynaBean.set("mappedIntProperty", map);
+        Object result = dynaBean.get("mappedIntProperty");
+        Assert.assertEquals(map, result);
+
+        PropertyUtils.setProperty(dynaBean, "mappedIntProperty", map);
+        Object mappedIntProperty = PropertyUtils.getProperty(dynaBean, "mappedIntProperty");
+        Assert.assertEquals(mappedIntProperty, map);
     }
 }
